@@ -26,4 +26,18 @@ class BAH_Loader:
             (math_s_curve_fn(max_value) - math_s_curve_fn(min_value));
           return this.round_number(3 - 5 * x); // S-curve scale -2..3 points for this category
         };
- """
+"""
+
+"""
+     total_percentage_change(year_data) {
+      if (year_data == null) {
+        return null;
+      }
+
+      let first_year_value = year_data[0],
+        last_year_value = year_data[year_data.length - 1];
+
+      return this.round_number(
+        (100 * (last_year_value - first_year_value)) / first_year_value
+      );
+"""
