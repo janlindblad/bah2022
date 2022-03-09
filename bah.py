@@ -15,12 +15,11 @@ def emission_points(emission, min_value, max_value):
   x = (emission - min_value) / (max_value - min_value)
   return round_number(maxpoints - maxpoints * x)
 
-def get_emissions_pc_noind(emdata, popdata, years):
+def get_emissions_pc(emdata, popdata, years, noind=0):
   lan_level = 0 # We don't care which Län (index 0) the Kommun is in
-  #>>> df=df.join((rus_co2[year]['Alla']['Alla'].droplevel(0).drop('Alla') - rus_co2[year]['Industri (energi + processer)']['Alla'].droplevel(0).drop('Alla')).div(scb[year]).dropna())
   yeardata = [pandas.DataFrame(
                 (emdata[year]['Alla']['Alla'].droplevel(0).drop('Alla') 
-                -emdata[year]['Industri (energi + processer)']['Alla'].droplevel(0).drop('Alla')
+                -emdata[year]['Industri (energi + processer)']['Alla'].droplevel(0).drop('Alla')*noind
                 ).div(popdata[year]).dropna()
               ) for year in years]
   em_pc_noind = yeardata.pop(0)
@@ -29,20 +28,16 @@ def get_emissions_pc_noind(emdata, popdata, years):
   return em_pc_noind
 
 def get_co2_emissions_pc_noind(bahl, years):
-  return get_emissions_pc_noind(bahl.rus_co2_raw, bahl.scb_pop, years)
+  return get_emissions_pc(bahl.rus_co2_raw, bahl.scb_pop, years, noind=1)
 
 def get_ghg_emissions_pc_noind(bahl, years):
-  return get_emissions_pc_noind(bahl.rus_ghg_raw, bahl.scb_pop, years)
+  return get_emissions_pc(bahl.rus_ghg_raw, bahl.scb_pop, years, noind=1)
 
-def change_points(emission, min_value, max_value):
-  maxpoints = 3
-  minpoints = -2
-  if emission < min_value:
-    return None
-  emission = min(emission, max_value)
-  x = (emission - min_value) / (max_value - min_value)
-  return round_number(maxpoints - maxpoints * x)
+def get_co2_emissions_pc(bahl, years):
+  return get_emissions_pc(bahl.rus_co2_raw, bahl.scb_pop, years)
 
+def get_ghg_emissions_pc(bahl, years):
+  return get_emissions_pc(bahl.rus_ghg_raw, bahl.scb_pop, years)
 
 def col12(bahl, f, years, ceiling):
   ktab = f(bahl,years)
@@ -70,12 +65,52 @@ def percent_change_pa(bahl, f, years):
   print(kperc_pa)
   return kperc_pa
 
+def col34(bahl, f, years, ceiling):
+  maxpoints = 3
+  minpoints = -2
+  def sign(df):
+    return df / df.abs()
+  def math_s_curve_fn(kchg):
+    return 1 - kchg.abs().pow(1 / 3)*sign(kchg)
+  kchg = percent_change_pa(bahl, f, years)
+  print('Average YoY percent changes')
+  print(kchg)
+  kchg = kchg.clip(upper=ceiling)
+  minval = pandas.DataFrame([kchg.min()])
+  maxval = pandas.DataFrame([kchg.max()])
+  print('Min/max vals')
+  print(minval)
+  print(maxval)
+  kpts01 = ((math_s_curve_fn(kchg)                - float(math_s_curve_fn(minval)[0][0])) /
+            (float(math_s_curve_fn(maxval)[0][0]) - float(math_s_curve_fn(minval)[0][0])))
+  print('0-1 scores')
+  print(kpts01)
+  kpts = maxpoints - (maxpoints-minpoints) * kpts01 # S-curve scale -2..3 points for this category
+
+  print('Sorted final scores')
+  print(kpts.sort_values())
+  kpts.sort_values().plot()
+  plt.show()
+  print(f"{kpts.values.tolist().count(0)} municipalities with zero emission score")
+  return kpts
+
+def change_points(emission, min_value, max_value):
+  maxpoints = 3
+  minpoints = -2
+  if emission < min_value:
+    return None
+  emission = min(emission, max_value)
+  x = (emission - min_value) / (max_value - min_value)
+  return round_number(maxpoints - maxpoints * x)
+
 def calc(bahl):
   years = [2015,2016,2017,2018,2019]
   #years = [2014,2015,2016,2017,2018]
   col1_pts = col12(bahl, get_co2_emissions_pc_noind, years, 6)
   col2_pts = col12(bahl, get_ghg_emissions_pc_noind, years, 9)
-  col3 = percent_change_pa(bahl, get_co2_emissions_pc_noind, years)
+  #col3 = percent_change_pa(bahl, get_co2_emissions_pc, years)
+  col3_pts = col34(bahl, get_co2_emissions_pc, years, 2)
+  col4_pts = col34(bahl, get_ghg_emissions_pc, years, 2)
 
 def main():
   bahl = BAH_Loader()
