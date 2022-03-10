@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+#
+# Copyright (C) 2022 Jan Lindblad, Klimatsekretariatet
+# 
+#
+# Raw emissions and population data need to be fetched from:
+# https://nationellaemissionsdatabasen.smhi.se/api/getexcelfile/?county=0&municipality=0&sub=CO2
+# https://nationellaemissionsdatabasen.smhi.se/api/getexcelfile/?county=0&municipality=0&sub=GGT
+# https://www.scb.se/contentassets/2b1c2c731366475694db9e7ea2eab14b/be0101_folkmangdkom1950_2021.xlsx
 
 import pandas, sys, math
 import matplotlib.pyplot as plt
