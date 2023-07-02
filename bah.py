@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2022 Jan Lindblad, Klimatsekretariatet
+# Copyright (C) 2022-2023 Jan Lindblad, Klimatsekretariatet
 # 
 #
 # Raw emissions and population data need to be fetched from:
@@ -15,9 +15,10 @@ class BAH_Loader:
   def __init__(self):
     alla = 'Alla'
     ind = 'Industri (energi + processer)'
-    self.rus_co2_raw = pandas.read_excel("Lansrapport_alla_CO2.xlsx", header=4, index_col=[0,1,2,3])
-    self.rus_ghg_raw = pandas.read_excel("Lansrapport_alla_vaxthusgaser_totalt.xlsx", header=5, index_col=[0,1,2,3])
-    self.scb_pop = pandas.read_excel("be0101_folkmangdkom1950_2021.xlsx", header=5, index_col=0).dropna(axis=0, thresh=3)
+    year = '2023'
+    self.rus_co2_raw = pandas.read_excel(f"data{year}/Lansrapport_alla_CO2.xlsx", header=4, index_col=[0,1,2,3])
+    self.rus_ghg_raw = pandas.read_excel(f"data{year}/Lansrapport_alla_vaxthusgaser_totalt.xlsx", header=5, index_col=[0,1,2,3])
+    self.scb_pop = pandas.read_excel(f"data{year}/be0101_folkmangdkom1950_2021.xlsx", header=5, index_col=0).dropna(axis=0, thresh=3)
 
 out = pandas.DataFrame()
 def store(title, s):
@@ -38,7 +39,7 @@ def round_number(val):
   return math.floor(val*100)/100
 
 def emission_points(emission, min_value, max_value):
-  maxpoints = 2
+  maxpoints = 1
   if emission < min_value:
     return None
   emission = min(emission, max_value) # Emissions above max_value are scored 0
@@ -97,7 +98,7 @@ def percent_change_pa(bahl, f, years):
   return kperc_pa
 
 def col34(bahl, f, years, ceiling):
-  maxpoints = 3
+  maxpoints = 2
   minpoints = -2
   def sign(df):
     return df / df.abs()
@@ -122,15 +123,6 @@ def col34(bahl, f, years, ceiling):
   print(f"{kpts.values.tolist().count(0)} municipalities with zero emission score")
   return kpts
 
-def change_points(emission, min_value, max_value):
-  maxpoints = 3
-  minpoints = -2
-  if emission < min_value:
-    return None
-  emission = min(emission, max_value)
-  x = (emission - min_value) / (max_value - min_value)
-  return round_number(maxpoints - maxpoints * x)
-
 def calc(bahl,years):
   col1_pts = col12(bahl, get_co2_emissions_pc_noind, years, 6) # min score when >6t/capita
   col2_pts = col12(bahl, get_ghg_emissions_pc_noind, years, 9) # min score when >9t/capita
@@ -145,7 +137,7 @@ def calc(bahl,years):
 def main():
   global out
   bahl = BAH_Loader()
-  years = [2015,2016,2017,2018,2019]
+  years = [2017,2018,2019,2020,2021]
   calc(bahl, years)
   print(f'\n\nFinal scores:\n{out}')
   out.to_excel(f"bah results {years[0]}-{years[-1]}.xlsx")
