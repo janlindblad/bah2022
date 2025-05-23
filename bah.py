@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2022-2023 Jan Lindblad, Klimatsekretariatet
+# Copyright (C) 2022-2025 Jan Lindblad, Klimatsekretariatet
 # 
 #
 # Raw emissions and population data need to be fetched from:
 # https://nationellaemissionsdatabasen.smhi.se/api/getexcelfile/?county=0&municipality=0&sub=CO2
 # https://nationellaemissionsdatabasen.smhi.se/api/getexcelfile/?county=0&municipality=0&sub=GGT
-# https://www.scb.se/contentassets/2b1c2c731366475694db9e7ea2eab14b/be0101_folkmangdkom1950_2021.xlsx
+# https://www.scb.se/hitta-statistik/statistik-efter-amne/befolkning-och-levnadsforhallanden/befolkningens-sammansattning-och-utveckling/befolkningsstatistik/pong/tabell-och-diagram/folkmangd-och-befolkningsforandringar---helarsstatistik/folkmangden-i-sveriges-kommuner-19502024-enligt-indelning-1-januari-2024/
 
 import pandas, sys, math
 import matplotlib.pyplot as plt
@@ -15,10 +15,10 @@ class BAH_Loader:
   def __init__(self):
     alla = 'Alla'
     ind = 'Industri (energi + processer)'
-    year = '2023'
-    self.rus_co2_raw = pandas.read_excel(f"data{year}/Lansrapport_alla_CO2.xlsx", header=4, index_col=[0,1,2,3])
-    self.rus_ghg_raw = pandas.read_excel(f"data{year}/Lansrapport_alla_vaxthusgaser_totalt.xlsx", header=5, index_col=[0,1,2,3])
-    self.scb_pop = pandas.read_excel(f"data{year}/be0101_folkmangdkom1950_2021.xlsx", header=5, index_col=0).dropna(axis=0, thresh=3)
+    self.rpt_year = '2025'
+    self.rus_co2_raw = pandas.read_excel(f"data{self.rpt_year}/Lansrapport_alla_CO2.xlsx", header=4, index_col=[0,1,2,3])
+    self.rus_ghg_raw = pandas.read_excel(f"data{self.rpt_year}/Lansrapport_alla_vaxthusgaser_totalt.xlsx", header=5, index_col=[0,1,2,3])
+    self.scb_pop = pandas.read_excel(f"data{self.rpt_year}/be0101_folkmangdkom2024.xlsx", header=5, index_col=0).dropna(axis=0, thresh=3)
 
 out = pandas.DataFrame()
 def store(title, s):
@@ -137,10 +137,10 @@ def calc(bahl,years):
 def main():
   global out
   bahl = BAH_Loader()
-  years = [2017,2018,2019,2020,2021]
+  years = [2019,2020,2021,2022,2023]
   calc(bahl, years)
   print(f'\n\nFinal scores:\n{out}')
-  out.to_excel(f"bah results {years[0]}-{years[-1]}.xlsx")
+  out.to_excel(f"bah results {bahl.rpt_year} ({years[0]}-{years[-1]}).xlsx")
 
 if __name__ == "__main__":
   main()
